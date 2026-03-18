@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soccer xG Analyzer</title>
+  <meta name="description" content="Compare xG, xGA, and match predictions for two soccer teams using Poisson and Monte Carlo simulation." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <div class="bg-orb orb1"></div>
+  <div class="bg-orb orb2"></div>
+  <div class="bg-orb orb3"></div>
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="logo"><span class="logo-icon">⚽</span><span>xG <strong>Analyzer</strong></span></div>
+    <p class="tagline">Expected Goals · Poisson + Monte Carlo · Powered by Understat</p>
+  </header>
+
+  <main>
+
+    <!-- ── Search Form ── -->
+    <section class="form-card glass" id="search-section">
+      <h1>Compare Two Teams</h1>
+      <p class="form-hint">Enter team names from EPL, La Liga, Bundesliga, Serie A, Ligue 1 or RFPL.</p>
+      <form id="analyze-form">
+        <div class="input-row">
+          <div class="input-group">
+            <label for="team1">Team 1</label>
+            <input id="team1" type="text" placeholder="e.g. Manchester City" autocomplete="off" required />
+          </div>
+          <div class="vs-badge">VS</div>
+          <div class="input-group">
+            <label for="team2">Team 2</label>
+            <input id="team2" type="text" placeholder="e.g. Arsenal" autocomplete="off" required />
+          </div>
+        </div>
+        <button type="submit" id="analyze-btn">
+          <span id="btn-text">Analyze</span>
+          <span id="btn-spinner" class="spinner hidden"></span>
+        </button>
+      </form>
+      <div id="error-box" class="error-box hidden"></div>
+    </section>
+
+    <!-- ── Results ── -->
+    <section id="results-section" class="hidden">
+
+      <!-- Match Header Banner -->
+      <div class="match-banner glass" id="match-banner">
+        <div class="banner-team" id="banner-team1"></div>
+        <div class="banner-center">
+          <div class="banner-vs">VS</div>
+          <div class="banner-verdict" id="banner-verdict"></div>
+          <div class="banner-league" id="banner-league"></div>
+        </div>
+        <div class="banner-team banner-team-right" id="banner-team2"></div>
+      </div>
+
+      <!-- 3-Column Dashboard -->
+      <div class="dashboard-grid">
+
+        <!-- LEFT: Team 1 -->
+        <div class="team-col" id="col-team1">
+          <div class="col-header teal-glow">
+            <span class="col-team-name" id="col-t1-name"></span>
+            <span class="col-league-badge" id="col-t1-league"></span>
+          </div>
+
+          <!-- Mini stat pills -->
+          <div class="mini-stats" id="mini-t1"></div>
+
+          <!-- Key Players -->
+          <div class="key-players glass" id="players-t1"></div>
+
+          <!-- xG History chart -->
+          <div class="col-chart-card glass">
+            <div class="col-chart-label">xG &amp; xGA — Last 5 Games</div>
+            <div class="col-chart-wrap"><canvas id="chart1"></canvas></div>
+          </div>
+
+          <!-- Match log -->
+          <div class="col-table-card glass">
+            <div class="col-table-label">Match Log</div>
+            <table id="table1" class="match-table"></table>
+          </div>
+        </div>
+
+        <!-- CENTER: Prediction -->
+        <div class="center-col glass" id="center-col">
+          <div class="center-title">
+            <span>Match Prediction</span>
+          </div>
+
+          <!-- Expected goals big display -->
+          <div class="xg-display">
+            <div class="xg-disp-block">
+              <div class="xg-disp-label" id="xg-label1"></div>
+              <div class="xg-disp-value teal" id="xg-val1"></div>
+            </div>
+            <div class="xg-disp-sep">xG</div>
+            <div class="xg-disp-block">
+              <div class="xg-disp-label" id="xg-label2"></div>
+              <div class="xg-disp-value amber" id="xg-val2"></div>
+            </div>
+          </div>
+
+          <!-- Probability bars -->
+          <div class="prob-bars" id="prob-bars"></div>
+          <div class="prob-legend" id="prob-legend"></div>
+
+          <!-- Poisson section -->
+          <div class="center-section-title">Poisson Distribution</div>
+          <div class="method-probs" id="poisson-probs"></div>
+          <div class="scoreline-label">Top Scorelines</div>
+          <div class="scoreline-grid" id="poisson-scorelines"></div>
+          <div class="extra-pills" id="poisson-extras"></div>
+
+          <div class="center-divider"></div>
+
+          <!-- Monte Carlo section -->
+          <div class="center-section-title">Monte Carlo <span class="mc-tag" id="mc-sims"></span></div>
+          <div class="method-probs" id="mc-probs"></div>
+          <div class="scoreline-label">Top Scorelines</div>
+          <div class="scoreline-grid" id="mc-scorelines"></div>
+          <div class="extra-pills" id="mc-extras"></div>
+
+          <div class="center-divider"></div>
+
+          <!-- Donut chart -->
+          <div class="donut-wrap">
+            <canvas id="prob-donut"></canvas>
+          </div>
+        </div>
+
+        <!-- RIGHT: Team 2 -->
+        <div class="team-col" id="col-team2">
+          <div class="col-header amber-glow">
+            <span class="col-team-name" id="col-t2-name"></span>
+            <span class="col-league-badge" id="col-t2-league"></span>
+          </div>
+
+          <div class="mini-stats" id="mini-t2"></div>
+
+          <!-- Key Players -->
+          <div class="key-players glass" id="players-t2"></div>
+
+          <div class="col-chart-card glass">
+            <div class="col-chart-label">xG &amp; xGA — Last 5 Games</div>
+            <div class="col-chart-wrap"><canvas id="chart2"></canvas></div>
+          </div>
+
+          <div class="col-table-card glass">
+            <div class="col-table-label">Match Log</div>
+            <table id="table2" class="match-table"></table>
+          </div>
+        </div>
+
+      </div><!-- /dashboard-grid -->
+
+    </section>
+  </main>
+
+  <footer>
+    <p>Data sourced from <a href="https://understat.com" target="_blank" rel="noopener">understat.com</a> · Statistical model: Poisson + Monte Carlo · Educational use only</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
