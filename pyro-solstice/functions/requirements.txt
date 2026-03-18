@@ -1,0 +1,8 @@
+firebase-functions
+firebase-admin
+flask
+requests
+beautifulsoup4
+lxml
+understatapi
+gunicorn>=21.2.0
